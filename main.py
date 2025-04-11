@@ -1,34 +1,56 @@
 import requests
+import time
+import tracemalloc
+
+tracemalloc.start()
+
+start = time.perf_counter()
 
 def get_text(url):
     response = requests.get(url)
     return response.text
 
-def count_word_frequencies(url, word):
-    text = get_text(url)
-    words = text.split()
-    count = 0
-    for w in words:
-        if w == word:
-            count += 1
-    return count
+def clean_text(text):
+    cleaned_text = ''
+    for ch in text:
+        if ch.isalnum() or ch.isspace():
+            cleaned_text += ch.lower()
+        else:
+            cleaned_text += ' '
+    return cleaned_text.split()
 
+def count_word_frequencies(words):
+    freq = {}
+    for word in words:
+        if word in freq:
+            freq[word] += 1
+        else:
+            freq[word] = 1
+    return freq
+    
 def main():
     words_file = "words.txt"
     url = "https://eng.mipt.ru/why-mipt/"
 
-    words_to_count = []
     with open(words_file, 'r') as file:
-        for line in file:
-            word = line.strip()
-            if word:
-                words_to_count.append(word)
+        words = [line.strip().lower() for line in file if line.strip()]
 
-    frequencies = {}
-    for word in words_to_count:
-        frequencies[word] = count_word_frequencies(url, word)
+    raw_text = get_text(url)
+    cleaned_text = clean_text(raw_text)
+    freq = count_word_frequencies(cleaned_text)
+
+    for word in words:
+        if word in freq:
+            print(f"{word}: {freq[word]}")
+
     
-    print(frequencies)
-
 if __name__ == "__main__":
     main()
+
+end = time.perf_counter()
+current, peak = tracemalloc.get_traced_memory()
+tracemalloc.stop()
+
+print(f"Время выполнения6: {end - start:0.4f} секунд")
+print(f"Текущая память: {current / 10**6} МБ")
+print(f"Пик памяти: {peak / 10**6} МБ")
